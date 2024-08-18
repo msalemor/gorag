@@ -21,7 +21,6 @@ var (
 	EmbeddingModel          = "nomic-embed-text"
 	Verbose                 = false
 	Keep                    = false
-	Version                 = "0.0.1a1"
 )
 
 func init() {
