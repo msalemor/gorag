@@ -1,0 +1,39 @@
+POST http://localhost:8080/api/ingest
+Content-Type: application/json
+
+{
+    "collection":"banks_collection",
+    "urls": [
+        "https://www.fdic.gov/system/files/2024-07/banklist.csv"
+    ]
+}
+
+###
+
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+    "collection": "FAQ",
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is the speed of light?"
+        }
+    ],
+    "max_tokens": 100,
+    "temperature": 0.1
+}
+
+###
+
+POST http://localhost:8080/api/query
+Content-Type: application/json
+
+{
+    "collection": "FAQ",
+    "query": "What is the return policy?",
+    "limit": 3,
+    "relevance": 0.75
+}
+
