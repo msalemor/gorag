@@ -18,28 +18,56 @@ gorag is both a sample CLI and a package. The CLI is designed to showcase using 
 
 #### Code
 
-##### 1.3.1 - Storing Memories
+##### 1.3.1 - RAG
+
 
 ```go
-package process
+package main
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/msalemor/gorag/pkg"
+	"github.com/msalemor/gorag/pkg/services"
+	"github.com/msalemor/gorag/pkg/stores"
 )
 
-func ingestFAQ(store pkg.IStore, collection string, keep bool, verbose bool, ctx context.Context) {
+var (
+	chatendpoint      = "http://localhost:11434/api/chat"
+	chatmodel         = "llama3"
+	embeddingendpoint = "http://localhost:11434/api/embeddings"
+	embeddingmodel    = "nomic-embed-text"
+	collection        = "FAQ"
+	verbose           = false
+)
 
-	if !keep {
-		store.DeleteCollection(collection, ctx)
+func main() {
+
+	ctx := context.Background()
+	client := &http.Client{}
+
+	chatService := &services.OllamaChatService{
+		Endpoint: chatendpoint,
+		Model:    chatmodel,
+		Client:   client,
 	}
 
-	if verbose {
-		fmt.Printf("Ingesting FAQ into collection %s\n", collection)
+	embeddingService := &services.OllamaEmbeddingService{
+		Endpoint: embeddingendpoint,
+		Model:    embeddingmodel,
+		Client:   client,
 	}
+
+	store := &stores.SqliteStore{
+		EmbeddingService: embeddingService,
+		Verbose:          verbose,
+	}
+
+	// Cleanup
+	store.DeleteCollection(collection, ctx)
 
 	// Ingest FAQ - Simple splitter based on paragraphs
 	chunks := strings.Split(pkg.FAQ, "\n\n")
@@ -50,47 +78,6 @@ func ingestFAQ(store pkg.IStore, collection string, keep bool, verbose bool, ctx
 			Text:       chunk,
 		}, ctx)
 	}
-}
-```
-
-##### 1.3.2 - Recalling memories
-
-```go
-package process
-
-import (
-	"context"
-	"fmt"
-	"net/http"
-	"strings"
-
-	"github.com/msalemor/gorag/pkg/services"
-	"github.com/msalemor/gorag/pkg/stores"
-)
-
-func ProcessConsole(chatendpoint, embeddingendpoint, collection, model string, keep bool, verbose bool) {
-
-	ctx := context.Background()
-	client := &http.Client{}
-
-	chatService := &services.OllamaChatService{
-		Endpoint: chatendpoint,
-		Model:    "llama3",
-		Client:   client,
-	}
-
-	embeddingService := &services.OllamaEmbeddingService{
-		Endpoint: embeddingendpoint,
-		Model:    "nomic-embed-text",
-		Client:   client,
-	}
-
-	store := &stores.SqliteStore{
-		EmbeddingService: embeddingService,
-		Verbose:          verbose,
-	}
-
-	ingestFAQ(store, collection, keep, verbose, ctx)
 
 	// user question
 	question := "What is the return policy?"
