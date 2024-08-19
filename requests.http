@@ -37,3 +37,35 @@ Content-Type: application/json
     "relevance": 0.75
 }
 
+###
+
+POST http://localhost:11434/v1/chat/completions
+Content-Type: application/json
+
+{
+        "model": "llama3",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": "What is the speed of light?"
+            }
+        ],
+        "max_tokens": 100,
+        "temperature": 0.1,
+        "stream":false
+}
+
+###
+
+POST http://localhost:11434/v1/embeddings
+Content-Type: application/json
+
+{
+        "model": "nomic-embed-text",
+        "input": "The speed of light is 300,000 km/s."
+}
+
