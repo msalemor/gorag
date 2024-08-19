@@ -10,7 +10,7 @@ A simple Golang RAG package to store and recall vectors and text chunks from SQL
 
 The CLI is designed to showcase using gorag to store and recall vectors from a SQLite database. The CLI comes with two commands:
 
-- `gorag console`: In this mode the CLI ingests an FAQ, breaks the FAQ into chunks, stores the chunks in SQLite, and performs a query on the FAQ.
+- `gorag console`: In this mode, the CLI ingests an FAQ, splits the FAQ into chunks, stores the chunks and resulting vectors in SQLite, and performs a query on the FAQ.
 
 ```text
 user:
@@ -19,7 +19,7 @@ assistant:
 According to our store's policy, we offer a 30-day return policy on most items. To be eligible for a return, the item must be in new and unused condition, and you must have the original receipt or proof of purchase. If you'd like to initiate a return, please contact our customer service team!
 ```
 
-- `gorag ui`: In this mode the CLI ingests an FAQ, breaks the FAQ into chunks, stores the chunks in SQLite, and exposes a two APIs endpoints to chat and perform a RAG query.
+- `gorag ui`: In this mode, the CLI ingests an FAQ, splits the FAQ into chunks, stores the chunks and resulting vectors in SQLite, and exposes a two APIs endpoints to chat and perform a RAG query.
 
 ```text
 POST http://localhost:8080/api/chat
