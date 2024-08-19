@@ -52,10 +52,13 @@ Content-Type: application/json
 
 ### 1.3 - Using gorag as a package
 
+- To get the package do:
+
+`go get -u github.com/msalemor/gorag`
 
 #### Code
 
-##### 1.3.1 - RAG
+##### 1.3.1 - gorag code sample
 
 
 ```go
