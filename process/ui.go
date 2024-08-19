@@ -19,13 +19,13 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, model string, 
 	client := &http.Client{}
 	ctx := context.Background()
 
-	chatService := &services.OllamaChatService{
+	chatService := &services.OllamaOpenAIChatService{
 		Endpoint: chatendpoint,
 		Model:    "llama3",
 		Client:   client,
 	}
 
-	embeddingService := &services.OllamaEmbeddingService{
+	embeddingService := &services.OllamaOpenAIEmbeddingService{
 		Endpoint: embeddingendpoint,
 		Model:    "nomic-embed-text",
 		Client:   client,
@@ -89,7 +89,7 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, model string, 
 			return
 		}
 		result := chatService.Chat(request.Messages, request.Temperature, request.MaxTokens, false)
-		c.JSON(http.StatusOK, gin.H{"content": result.Message.Content})
+		c.JSON(http.StatusOK, gin.H{"content": result.Choices[0].Message.Content})
 	})
 
 	group.POST("/query", func(c *gin.Context) {
@@ -126,7 +126,7 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, model string, 
 		// Process the completion
 		result := chatService.Chat(messages, 0.1, 4096, false)
 		//result := chatService.Chat(request.Messages, request.Temperature, request.MaxTokens, false)
-		c.JSON(http.StatusOK, gin.H{"content": result.Message.Content})
+		c.JSON(http.StatusOK, gin.H{"content": result.Choices[0].Message.Content})
 	})
 
 	return r

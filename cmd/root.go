@@ -15,9 +15,9 @@ const (
 
 var (
 	Collection              = "eChampShop"
-	OllamaEmbeddingEndpoint = "http://localhost:11434/api/embeddings"
+	OllamaEmbeddingEndpoint = "http://localhost:11434/v1/embeddings"
 	ChatModel               = "llama3"
-	OllamaChatEndpoint      = "http://localhost:11434/api/chat"
+	OllamaChatEndpoint      = "http://localhost:11434/v1/chat/completions"
 	EmbeddingModel          = "nomic-embed-text"
 	Verbose                 = false
 	Keep                    = false

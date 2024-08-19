@@ -15,13 +15,13 @@ func ProcessConsole(chatendpoint, embeddingendpoint, collection, model string, k
 	ctx := context.Background()
 	client := &http.Client{}
 
-	chatService := &services.OllamaChatService{
+	chatService := &services.OllamaOpenAIChatService{
 		Endpoint: chatendpoint,
 		Model:    "llama3",
 		Client:   client,
 	}
 
-	embeddingService := &services.OllamaEmbeddingService{
+	embeddingService := &services.OllamaOpenAIEmbeddingService{
 		Endpoint: embeddingendpoint,
 		Model:    "nomic-embed-text",
 		Client:   client,
@@ -54,5 +54,5 @@ func ProcessConsole(chatendpoint, embeddingendpoint, collection, model string, k
 	// Process the completion
 	completion := chatService.Chat(messages, 0.1, 4096, false)
 	fmt.Printf("user:\n%s\n", question)
-	fmt.Printf("assistant:\n%s\n", completion.Message.Content)
+	fmt.Printf("assistant:\n%s\n", completion.Choices[0].Message.Content)
 }

@@ -20,12 +20,14 @@ type OllamaOpenAIEmbedRequest struct {
 	Input string `json:"input"`
 }
 
+type OllamaOpenAIEmbeddingData struct {
+	Ojbect    string    `json:"object"`
+	Embedding []float64 `json:"embedding"`
+}
+
 type OllamaOpenAIEmbedResponse struct {
-	Object string `json:"object"`
-	Data   struct {
-		Object    string    `json:"object"`
-		Embedding []float64 `json:"embedding"`
-	} `json:"data"`
+	Object string                      `json:"object"`
+	Data   []OllamaOpenAIEmbeddingData `json:"data"`
 }
 
 func (e *OllamaOpenAIEmbeddingService) Embed(text string) *[]float64 {
@@ -67,9 +69,9 @@ func (e *OllamaOpenAIEmbeddingService) Embed(text string) *[]float64 {
 	var vector OllamaOpenAIEmbedResponse
 	err = json.Unmarshal(body, &vector)
 	if err != nil {
-		log.Printf("Unable to unmarshal response body to OllamaEmbedResponse: %s", err)
+		log.Printf("Unable to unmarshal response body to OllamaOpenAIEmbedResponse: %s", err)
 		return nil
 	}
 
-	return &vector.Data.Embedding
+	return &vector.Data[0].Embedding
 }
