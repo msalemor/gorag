@@ -1,17 +1,54 @@
 # gorag
 
-## 1.0 - gorag
+## 1.0 - gorag - CLI and package
 
 ### 1.1 - Overview 
 
-A simple Golang RAG package to store and recall vectors and text chunks from SQLite inspired grately on Semantic Kernel memories.
+A simple Golang RAG package to store and recall vectors and text chunks from SQLite inspired grately on Semantic Kernel memories. gorag is both a sample CLI and a package.
 
 ### 1.2 - Using gorag as a CLI
 
-gorag is both a sample CLI and a package. The CLI is designed to showcase using gorag to store and recall vectors from a SQLite database. The CLI comes with two commands:
+The CLI is designed to showcase using gorag to store and recall vectors from a SQLite database. The CLI comes with two commands:
 
-- `gorag console`
-- `gorag ui`
+- `gorag console`: In this mode the CLI ingests an FAQ, breaks the FAQ into chunks, stores the chunks in SQLite, and performs a query on the FAQ.
+
+```text
+user:
+What is the return policy?
+assistant:
+According to our store's policy, we offer a 30-day return policy on most items. To be eligible for a return, the item must be in new and unused condition, and you must have the original receipt or proof of purchase. If you'd like to initiate a return, please contact our customer service team!
+```
+
+- `gorag ui`: In this mode the CLI ingests an FAQ, breaks the FAQ into chunks, stores the chunks in SQLite, and exposes a two APIs endpoints to chat and perform a RAG query.
+
+```text
+POST http://localhost:8080/api/chat
+Content-Type: application/json
+
+{
+    "collection": "FAQ",
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is the speed of light?"
+        }
+    ],
+    "max_tokens": 100,
+    "temperature": 0.1
+}
+
+###
+
+POST http://localhost:8080/api/query
+Content-Type: application/json
+
+{
+    "collection": "FAQ",
+    "query": "What is the return policy?",
+    "limit": 3,
+    "relevance": 0.75
+}
+```
 
 ### 1.3 - Using gorag as a package
 
