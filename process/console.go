@@ -1,36 +1,15 @@
 package process
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/msalemor/gorag/pkg/services"
-	"github.com/msalemor/gorag/pkg/stores"
 )
 
-func ProcessConsole(chatendpoint, embeddingendpoint, collection, model string, keep bool, verbose bool) {
+func ProcessConsole(chatendpoint, embeddingendpoint, collection, chatmodel, embeddingmodel string, keep bool, verbose bool) {
 
-	ctx := context.Background()
-	client := &http.Client{}
-
-	chatService := &services.OllamaOpenAIChatService{
-		Endpoint: chatendpoint,
-		Model:    "llama3",
-		Client:   client,
-	}
-
-	embeddingService := &services.OllamaOpenAIEmbeddingService{
-		Endpoint: embeddingendpoint,
-		Model:    "nomic-embed-text",
-		Client:   client,
-	}
-
-	store := &stores.SqliteStore{
-		EmbeddingService: embeddingService,
-		Verbose:          verbose,
-	}
+	ctx, chatService, store := initServices(chatendpoint, chatmodel, embeddingendpoint, embeddingmodel, verbose)
 
 	ingestFAQ(store, collection, keep, verbose, ctx)
 

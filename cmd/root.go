@@ -14,10 +14,10 @@ const (
 )
 
 var (
-	Collection              = "eChampShop"
-	OllamaEmbeddingEndpoint = "http://localhost:11434/v1/embeddings"
-	ChatModel               = "llama3"
+	Collection              = "FAQ"
 	OllamaChatEndpoint      = "http://localhost:11434/v1/chat/completions"
+	ChatModel               = "llama3.1"
+	OllamaEmbeddingEndpoint = "http://localhost:11434/v1/embeddings"
 	EmbeddingModel          = "nomic-embed-text"
 	Verbose                 = false
 	Keep                    = false

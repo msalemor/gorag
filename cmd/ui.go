@@ -12,7 +12,7 @@ import (
 //https://www.fdic.gov/system/files/2024-07/banklist.csv
 
 func processUI() {
-	r := process.ConfigureRoutes(OllamaChatEndpoint, OllamaEmbeddingEndpoint, DEFAULT_COLLECTION, EmbeddingModel, false, Verbose)
+	r := process.ConfigureRoutes(OllamaChatEndpoint, OllamaEmbeddingEndpoint, DEFAULT_COLLECTION, ChatModel, EmbeddingModel, false, Verbose)
 	log.Println("Starting server on http://localhost:8080")
 	r.Run()
 }

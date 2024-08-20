@@ -17,7 +17,7 @@ func consoleCmd() *cobra.Command {
 			fmt.Println("Running in console mode")
 			fmt.Println("Config:", viper.GetString("config"))
 			log.Println("Verbose:", Verbose)
-			process.ProcessConsole(OllamaChatEndpoint, OllamaEmbeddingEndpoint, DEFAULT_COLLECTION, EmbeddingModel, Keep, Verbose)
+			process.ProcessConsole(OllamaChatEndpoint, OllamaEmbeddingEndpoint, DEFAULT_COLLECTION, ChatModel, EmbeddingModel, Keep, Verbose)
 		},
 	}
 	cmdConsole.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Verbose logging. (default: false)")
