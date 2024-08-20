@@ -3,18 +3,17 @@ package stores
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"sort"
 
-	"github.com/msalemor/gorag/pkg"
 	"github.com/msalemor/gorag/pkg/services"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 type SqliteStore struct {
 	Db               *gorm.DB
-	EmbeddingService pkg.IEmbeddingService
+	EmbeddingService services.IEmbeddingService
 	Verbose          bool
 }
 
@@ -22,7 +21,7 @@ var isTableFound bool
 
 func (s *SqliteStore) checkTable(ctx context.Context) {
 	if !isTableFound {
-		s.CreateTable(pkg.Memory{}, ctx)
+		s.CreateTable(services.Memory{}, ctx)
 		isTableFound = true
 	}
 }
@@ -31,7 +30,7 @@ func (s *SqliteStore) checkDB(ctx context.Context) {
 	if s.Db == nil {
 		db, err := gorm.Open(sqlite.Open("memories.sqlite"), &gorm.Config{})
 		if err != nil {
-			log.Fatalf("failed to connect database: %v", err)
+			logrus.Fatalf("failed to connect database: %v", err)
 		}
 		s.Db = db
 		s.checkTable(ctx)
@@ -40,7 +39,7 @@ func (s *SqliteStore) checkDB(ctx context.Context) {
 
 func (s *SqliteStore) CreateTable(T any, ctx context.Context) (bool, error) {
 	if s.Verbose {
-		log.Println("Create Table")
+		logrus.Info("Creating the memories table")
 	}
 	// Migrate the schema
 	s.checkDB(ctx)
@@ -50,27 +49,27 @@ func (s *SqliteStore) CreateTable(T any, ctx context.Context) (bool, error) {
 
 func (s *SqliteStore) CollectionExists(collection string, ctx context.Context) bool {
 	if s.Verbose {
-		log.Println("Check Collection Exists")
+		logrus.Infof("Checking to see if the collection Exists: %s", collection)
 	}
 	s.checkDB(ctx)
-	var table pkg.Memory
+	var table services.Memory
 	s.Db.WithContext(ctx).First(&table, "collection = ?", collection)
 	return table.Collection != ""
 }
 
 func (s *SqliteStore) CreateCollection(collection string, ctx context.Context) (bool, error) {
 	if s.Verbose {
-		log.Println("Create Collection")
+		logrus.Infof("Creating the collection: %s", collection)
 	}
 
 	s.checkDB(ctx)
-	s.Db.WithContext(ctx).Create(&pkg.Memory{Collection: collection})
+	s.Db.WithContext(ctx).Create(&services.Memory{Collection: collection})
 	return true, nil
 }
 
-func (s *SqliteStore) AddMemory(memory pkg.Memory, ctx context.Context) (string, error) {
+func (s *SqliteStore) AddMemory(memory services.Memory, ctx context.Context) (string, error) {
 	if s.Verbose {
-		log.Printf("Adding Memory: %s", memory.Key)
+		logrus.Infof("Adding Memory: (%s,%s)", memory.Collection, memory.Key)
 	}
 
 	s.checkDB(ctx)
@@ -81,11 +80,11 @@ func (s *SqliteStore) AddMemory(memory pkg.Memory, ctx context.Context) (string,
 	// 	s.CreateCollection(memory.Collection, ctx)
 	// }
 
-	var result pkg.Memory
+	var result services.Memory
 	// Search collection and key
 	s.Db.WithContext(ctx).First(&result, "collection = ? AND key = ?", memory.Collection, memory.Key)
 
-	v := s.EmbeddingService.Embed(memory.Text)
+	v := s.EmbeddingService.Embed(&services.EmbeddingOpts{Text: memory.Text})
 	if v == nil {
 		return "", nil
 	}
@@ -97,7 +96,7 @@ func (s *SqliteStore) AddMemory(memory pkg.Memory, ctx context.Context) (string,
 
 	// If the memory already exists, update it
 	if result.Collection != "" {
-		s.Db.WithContext(ctx).Model(&pkg.Memory{}).Where("collection = ? AND key = ?", memory.Collection, memory.Key).Updates(memory)
+		s.Db.WithContext(ctx).Model(&services.Memory{}).Where("collection = ? AND key = ?", memory.Collection, memory.Key).Updates(memory)
 	} else {
 		// If the memory does not exist, create it
 		s.Db.WithContext(ctx).Create(&memory)
@@ -105,40 +104,40 @@ func (s *SqliteStore) AddMemory(memory pkg.Memory, ctx context.Context) (string,
 	return memory.Key, nil
 }
 
-func (s *SqliteStore) GetMemory(collection, key string, ctx context.Context) (pkg.Memory, error) {
+func (s *SqliteStore) GetMemory(collection, key string, ctx context.Context) (services.Memory, error) {
 	if s.Verbose {
-		log.Println("Get Memory")
+		logrus.Infof("Geting the memory: (%s,%s)", collection, key)
 	}
 
 	s.checkDB(ctx)
-	var result pkg.Memory
+	var result services.Memory
 	// Search collection and key
 	s.Db.WithContext(ctx).First(&result, "collection = ? AND key = ?", collection, key)
 	if result.Collection == "" {
-		return pkg.Memory{}, nil
+		return services.Memory{}, nil
 	}
 	return result, nil
 }
 
-func (s *SqliteStore) GetAll(collection string, ctx context.Context) ([]pkg.Memory, error) {
+func (s *SqliteStore) GetAll(collection string, ctx context.Context) ([]services.Memory, error) {
 	if s.Verbose {
-		log.Println("Get All")
+		logrus.Infof("Getting all the memories from collection: %s", collection)
 	}
 
 	s.checkDB(ctx)
-	var result []pkg.Memory
+	var result []services.Memory
 	s.Db.WithContext(ctx).Find(&result, "collection = ? AND key <> ''", collection)
 	return result, nil
 }
 
 func (s *SqliteStore) DeleteCollection(collection string, ctx context.Context) (bool, error) {
 	if s.Verbose {
-		log.Println("Delete Collection")
+		logrus.Infof("Delete collection: %s", collection)
 	}
 
 	s.checkDB(ctx)
 	if s.CollectionExists(collection, ctx) {
-		s.Db.WithContext(ctx).Where("collection = ?", collection).Delete(&pkg.Memory{})
+		s.Db.WithContext(ctx).Where("collection = ?", collection).Delete(&services.Memory{})
 		return true, nil
 	}
 	return false, nil
@@ -146,57 +145,70 @@ func (s *SqliteStore) DeleteCollection(collection string, ctx context.Context) (
 
 func (s *SqliteStore) DeleteMemory(collection, key string, ctx context.Context) (bool, error) {
 	if s.Verbose {
-		log.Println("Delete Memory")
+		logrus.Infof("Delete memory: (%s,%s)", collection, key)
 	}
 
 	s.checkDB(ctx)
 	test, _ := s.GetMemory(collection, key, ctx)
 	if test.Collection != "" {
-		s.Db.WithContext(ctx).Where("collection = ? AND key = ?", collection, key).Delete(&pkg.Memory{})
+		s.Db.WithContext(ctx).Where("collection = ? AND key = ?", collection, key).Delete(&services.Memory{})
 		return true, nil
 	}
 	return false, s.Db.Error
 }
 
-func (s *SqliteStore) Search(collection, query string, limit int, relevance float64, emb bool, ctx context.Context) ([]pkg.MemorySearchResult, error) {
+func (s *SqliteStore) Search(collection, query string, limit int, relevance float64, emb bool, ctx context.Context) ([]services.MemorySearchResult, error) {
 	if s.Verbose {
-		log.Println("Search")
+		logrus.Infof("Searching memories in collection: %s", collection)
 	}
 
 	s.checkDB(ctx)
 	records, _ := s.GetAll(collection, ctx)
-	results := []pkg.MemorySearchResult{}
+	results := []services.MemorySearchResult{}
 	for _, record := range records {
 		// Deserialize the embedding
 		var embedding []float64
 		_ = json.Unmarshal([]byte(record.Embedding), &embedding)
 		// Calculate the cosine similarity
-		v := s.EmbeddingService.Embed(query)
-		similarity := services.CosineSimilarity(embedding, *v)
-		// If the similarity is greater than the relevance, add it to the result
-		if similarity > relevance {
-			memoryResult := pkg.MemorySearchResult{
-				Collection:  record.Collection,
-				Key:         record.Key,
-				Text:        record.Text,
-				Description: record.Description,
-				Relevance:   similarity}
-			if emb {
-				var floatList *[]float64
-				json.Unmarshal([]byte(record.Embedding), floatList)
-				memoryResult.Embedding = floatList
+		v := s.EmbeddingService.Embed(&services.EmbeddingOpts{Text: query})
+		if v == nil {
+			logrus.Error("Unable to get embedding")
+		} else {
+			similarity := services.CosineSimilarity(embedding, *v)
+			// If the similarity is greater than the relevance, add it to the result
+			if similarity > relevance {
+				memoryResult := services.MemorySearchResult{
+					Collection:  record.Collection,
+					Key:         record.Key,
+					Text:        record.Text,
+					Description: record.Description,
+					Relevance:   similarity}
+				if emb {
+					var floatList *[]float64
+					json.Unmarshal([]byte(record.Embedding), floatList)
+					memoryResult.Embedding = floatList
+				}
+				results = append(results, memoryResult)
 			}
-			results = append(results, memoryResult)
 		}
 	}
-	// Sort by relevance
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].Relevance > results[j].Relevance
-	})
 
-	// Limit the number of results
-	if len(results) > limit {
-		results = results[:limit]
+	if len(results) > 0 {
+		// Sort by relevance
+		if s.Verbose {
+			logrus.Infof("Sorting the memory results by relevance: %f", relevance)
+		}
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Relevance > results[j].Relevance
+		})
+
+		// Limit the number of results
+		if s.Verbose {
+			logrus.Infof("Limiting the number of results from: %v to %v", len(results), limit)
+		}
+		if len(results) > limit {
+			results = results[:limit]
+		}
 	}
 
 	return results, nil

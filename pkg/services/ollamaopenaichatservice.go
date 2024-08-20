@@ -3,9 +3,11 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 type OllamaOpenAIChatService struct {
@@ -40,28 +42,28 @@ type OllamaOpenAIChatResponse struct {
 	} `json:"usage"`
 }
 
-func (e *OllamaOpenAIChatService) Chat(messages []Message, temperature float64, maxTokens int, stream bool) *OllamaOpenAIChatResponse {
+func (e *OllamaOpenAIChatService) Chat(opts *ChatOpts) *OllamaOpenAIChatResponse {
 
 	// marshall data to json (like json_encode)
 	ollamaReq := OllamaChatRequest{
 		Model:    e.Model,
-		Messages: messages,
+		Messages: opts.Messages,
 		Options: OllamaChatServiceOptions{
-			Temperature: temperature,
-			MaxTokens:   maxTokens,
+			Temperature: opts.Temperature,
+			MaxTokens:   opts.MaxTokens,
 		},
-		Stream: stream,
+		Stream: opts.Stream,
 	}
 
 	marshalled, err := json.Marshal(ollamaReq)
 	if err != nil {
-		log.Printf("impossible to marshall teacher: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to marshall teacher: %s", err))
 		return nil
 	}
 
 	req, err := http.NewRequest(http.MethodPost, e.Endpoint, bytes.NewReader(marshalled))
 	if err != nil {
-		log.Printf("impossible to create request: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to create request: %s", err))
 		return nil
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -69,24 +71,29 @@ func (e *OllamaOpenAIChatService) Chat(messages []Message, temperature float64, 
 
 	resp, err := e.Client.Do(req)
 	if err != nil {
-		log.Printf("impossible to send request: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to send request: %s", err))
 		return nil
 	}
+	if resp.StatusCode != http.StatusOK {
+		logrus.Error(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
+		return nil
+	}
+
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("impossible to read response body: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to read response body: %s", err))
 		return nil
 	}
 
 	// Parse the response body into a vector of floats
-	var completion OllamaOpenAIChatResponse
+	var completion *OllamaOpenAIChatResponse
 	err = json.Unmarshal(body, &completion)
 	if err != nil {
-		log.Printf("impossible to unmarshal response body: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to unmarshal response body: %s", err))
 		return nil
 	}
 
-	return &completion
+	return completion
 }

@@ -7,10 +7,9 @@ import (
 	"github.com/msalemor/gorag/pkg/services"
 )
 
-func ProcessConsole(chatendpoint, embeddingendpoint, collection, chatmodel, embeddingmodel string, keep bool, verbose bool) {
+func ProcessConsole(chatEndpoint, embeddingEndpoint, collection, chatModel, embeddingModel string, keep bool, verbose bool) {
 
-	ctx, chatService, store := initServices(chatendpoint, chatmodel, embeddingendpoint, embeddingmodel, verbose)
-
+	ctx, chatService, store := initServices(chatEndpoint, chatModel, embeddingEndpoint, embeddingModel, verbose)
 	ingestFAQ(store, collection, keep, verbose, ctx)
 
 	// user question
@@ -31,7 +30,9 @@ func ProcessConsole(chatendpoint, embeddingendpoint, collection, chatmodel, embe
 	}
 
 	// Process the completion
-	completion := chatService.Chat(messages, 0.1, 4096, false)
+	completion := chatService.Chat(&services.ChatOpts{Messages: messages, Temperature: 0.1, MaxTokens: 4096})
 	fmt.Printf("user:\n%s\n", question)
-	fmt.Printf("assistant:\n%s\n", completion.Choices[0].Message.Content)
+	if completion != nil {
+		fmt.Printf("assistant:\n%s\n", completion.Choices[0].Message.Content)
+	}
 }

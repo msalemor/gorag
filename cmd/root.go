@@ -9,20 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	DEFAULT_COLLECTION = "FAQ"
-)
-
-var (
-	Collection              = "FAQ"
-	OllamaChatEndpoint      = "http://localhost:11434/v1/chat/completions"
-	ChatModel               = "llama3.1"
-	OllamaEmbeddingEndpoint = "http://localhost:11434/v1/embeddings"
-	EmbeddingModel          = "nomic-embed-text"
-	Verbose                 = false
-	Keep                    = false
-)
-
 func init() {
 	ex, err := os.Executable()
 	if err != nil {

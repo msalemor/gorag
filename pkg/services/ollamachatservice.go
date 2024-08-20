@@ -3,9 +3,11 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Message struct {
@@ -45,28 +47,28 @@ type OllamaChatResponse struct {
 	EvalDuration       int     `json:"eval_duration"`
 }
 
-func (e *OllamaChatService) Chat(messages []Message, temperature float64, maxTokens int, stream bool) *OllamaChatResponse {
+func (e *OllamaChatService) Chat(opts *ChatOpts) *OllamaChatResponse {
 
 	// marshall data to json (like json_encode)
 	ollamaReq := OllamaChatRequest{
 		Model:    e.Model,
-		Messages: messages,
+		Messages: opts.Messages,
 		Options: OllamaChatServiceOptions{
-			Temperature: temperature,
-			MaxTokens:   maxTokens,
+			Temperature: opts.Temperature,
+			MaxTokens:   opts.MaxTokens,
 		},
-		Stream: stream,
+		Stream: opts.Stream,
 	}
 
 	marshalled, err := json.Marshal(ollamaReq)
 	if err != nil {
-		log.Printf("impossible to marshall teacher: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to marshall teacher: %s", err))
 		return nil
 	}
 
 	req, err := http.NewRequest(http.MethodPost, e.Endpoint, bytes.NewReader(marshalled))
 	if err != nil {
-		log.Printf("impossible to create request: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to create request: %s", err))
 		return nil
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -74,14 +76,14 @@ func (e *OllamaChatService) Chat(messages []Message, temperature float64, maxTok
 
 	resp, err := e.Client.Do(req)
 	if err != nil {
-		log.Printf("impossible to send request: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to send request: %s", err))
 		return nil
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("impossible to read response body: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to read response body: %s", err))
 		return nil
 	}
 
@@ -89,7 +91,7 @@ func (e *OllamaChatService) Chat(messages []Message, temperature float64, maxTok
 	var completion OllamaChatResponse
 	err = json.Unmarshal(body, &completion)
 	if err != nil {
-		log.Printf("impossible to unmarshal response body: %s", err)
+		logrus.Error(fmt.Sprintf("impossible to unmarshal response body: %s", err))
 		return nil
 	}
 

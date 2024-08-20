@@ -3,19 +3,19 @@ package process
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/msalemor/gorag/pkg"
 	"github.com/msalemor/gorag/pkg/services"
+	"github.com/msalemor/gorag/pkg/splitters"
 )
 
-func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, chatmodel, embeddingmodel string, keep, verbose bool) *gin.Engine {
+func ConfigureRoutes(chatEndpoint, embeddingEndpoint, collection, chatModel, embeddingModel string, keep, verbose bool) *gin.Engine {
 
-	ctx, chatService, store := initServices(chatendpoint, chatmodel, embeddingendpoint, embeddingmodel, verbose)
-
+	ctx, chatService, store := initServices(chatEndpoint, chatModel, embeddingEndpoint, embeddingModel, verbose)
 	ingestFAQ(store, collection, keep, verbose, ctx)
 
 	r := gin.Default()
@@ -34,22 +34,40 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, chatmodel, emb
 			Collection string   `json:"collection"`
 			URLs       []string `json:"urls"`
 		}
-		c.ShouldBindJSON(&request)
+		err := c.ShouldBindJSON(&request)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
 
 		if request.Collection == "" || len(request.URLs) == 0 {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Provide a collection name and a list of URLs to ingest"})
 			return
 		}
 
-		mem1 := pkg.Memory{
-			Collection: "faq",
-			Key:        "faq-1",
-			Text:       "What is the return policy?",
+		// Get the text from the URLs
+		for _, url := range request.URLs {
+			content, err := urlService.GetURLText(url, chatService.Client)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+				return
+			}
+			if content != "" {
+				chunks := splitter.Split(splitters.SplitterOpts{Content: content})
+				filename := path.Base(url)
+				filenameWithoutExt := path.Base(filename[:len(filename)-len(path.Ext(filename))])
+				for idx, chunk := range chunks {
+					store.AddMemory(services.Memory{
+						Collection:  request.Collection,
+						Key:         fmt.Sprintf("%s-%d", filenameWithoutExt, idx),
+						Text:        chunk,
+						Description: &url,
+					}, ctx)
+				}
+			}
 		}
-		store.AddMemory(mem1, ctx)
 
 		c.JSON(http.StatusOK, gin.H{"message": "ingested", "urls": request.URLs})
-
 	})
 
 	group.POST("/chat", func(c *gin.Context) {
@@ -68,12 +86,12 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, chatmodel, emb
 			c.JSON(http.StatusNotFound, gin.H{"message": "Provide a collection name and a list messages"})
 			return
 		}
-		result := chatService.Chat(request.Messages, request.Temperature, request.MaxTokens, false)
+		result := chatService.Chat(&services.ChatOpts{Messages: request.Messages, Temperature: request.Temperature, MaxTokens: request.MaxTokens})
 		c.JSON(http.StatusOK, gin.H{"content": result.Choices[0].Message.Content})
 	})
 
 	group.POST("/query", func(c *gin.Context) {
-		var request pkg.QueryRequest
+		var request services.QueryRequest
 		err := c.ShouldBindJSON(&request)
 		if err != nil {
 			fmt.Println(err)
@@ -104,7 +122,7 @@ func ConfigureRoutes(chatendpoint, embeddingendpoint, collection, chatmodel, emb
 		messages = append(messages, msg)
 
 		// Process the completion
-		result := chatService.Chat(messages, 0.1, 4096, false)
+		result := chatService.Chat(&services.ChatOpts{Messages: messages, Temperature: 0.1, MaxTokens: 4096})
 		//result := chatService.Chat(request.Messages, request.Temperature, request.MaxTokens, false)
 		c.JSON(http.StatusOK, gin.H{"content": result.Choices[0].Message.Content})
 	})

@@ -1,6 +1,23 @@
-package pkg
+package services
 
-import "github.com/msalemor/gorag/pkg/services"
+type ChatOpts struct {
+	Messages    []Message
+	Temperature float64
+	MaxTokens   int
+	Stream      bool
+}
+
+type EmbeddingOpts struct {
+	Text string
+}
+
+type IChatService interface {
+	Chat(opts *ChatOpts) *OllamaChatResponse
+}
+
+type IEmbeddingService interface {
+	Embed(opts *EmbeddingOpts) *[]float64
+}
 
 type Memory struct {
 	Collection         string `gorm:"primaryKey"`
@@ -22,9 +39,9 @@ type MemorySearchResult struct {
 }
 
 type QueryRequest struct {
-	Collection string              `json:"collection"`
-	Query      string              `json:"query"`
-	Limit      int                 `json:"limit"`
-	Relevance  float64             `json:"relevance"`
-	Messages   *[]services.Message `json:"messages"`
+	Collection string     `json:"collection"`
+	Query      string     `json:"query"`
+	Limit      int        `json:"limit"`
+	Relevance  float64    `json:"relevance"`
+	Messages   *[]Message `json:"messages"`
 }
