@@ -8,11 +8,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const (
-	DEFAULT_COLLECTION = "FAQ"
-)
-
 var (
+	Endpoint                = "http://localhost:11434/v1"
 	Collection              = "FAQ"
 	OllamaChatEndpoint      = "http://localhost:11434/v1/chat/completions"
 	ChatModel               = "llama3"
@@ -31,7 +28,7 @@ func init() {
 	log.Println("Executable path: ", exPath)
 
 	godotenv.Load(".env", exPath+"/.env")
-	if value := os.Getenv("APP_COLLECTION"); value != "" {
+	if value := os.Getenv("COLLECTION"); value != "" {
 		Collection = value
 	}
 	if value := os.Getenv("OLLAMA_CHAT_ENDPOINT"); value != "" {
