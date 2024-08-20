@@ -1,39 +1,8 @@
 package cmd
 
 import (
-	"log"
-	"os"
-	"path/filepath"
-
-	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	ex, err := os.Executable()
-	if err != nil {
-		println("Error getting executable path")
-	}
-	exPath := filepath.Dir(ex)
-	log.Println("Executable path: ", exPath)
-
-	godotenv.Load(".env", exPath+"/.env")
-	if value := os.Getenv("APP_COLLECTION"); value != "" {
-		Collection = value
-	}
-	if value := os.Getenv("OLLAMA_CHAT_ENDPOINT"); value != "" {
-		OllamaChatEndpoint = value
-	}
-	if value := os.Getenv("CHAT_MODEL"); value != "" {
-		ChatModel = value
-	}
-	if value := os.Getenv("OLLAMA_EMBBEDING_ENDPOINT"); value != "" {
-		OllamaEmbeddingEndpoint = value
-	}
-	if value := os.Getenv("EMBBEDING_MODEL"); value != "" {
-		EmbeddingModel = value
-	}
-}
 
 func RootCmd() *cobra.Command {
 	root := &cobra.Command{
